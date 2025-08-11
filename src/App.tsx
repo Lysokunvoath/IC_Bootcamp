@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Home, LogOut, Calendar, Plus, Users, Settings, ChevronLeft, ChevronRight, Star } from 'lucide-react';
-import { format, startOfWeek, addDays, getDay, isSameDay, isSameMonth } from 'date-fns';
+import { Home, LogOut, Calendar, Users, Settings, ChevronLeft, ChevronRight, Star, Plus, UserPlus } from 'lucide-react';
+import { format, startOfWeek, addDays, isSameDay, isSameMonth } from 'date-fns';
 
-// This is a self-contained application with both the Home and Calendar pages.
+// This is a self-contained application with the Home, Calendar, and a new Create Group page.
 // Mock data is used to simulate a user's groups and activities.
 
 // Helper function to format a time string
@@ -19,11 +19,13 @@ export default function App() {
     // State to manage which page is currently displayed
     const [currentPage, setCurrentPage] = useState('home');
 
-    // Mock data for groups and meetups, centralized for both pages
-    const [groups] = useState([
+    // State for groups and meetups, now mutable
+    const [groups, setGroups] = useState([
         { id: 'group_1', name: 'Book Club', description: 'Reading classic literature together.', members: ['user_123', 'user_456'], owner: 'user_123' },
         { id: 'group_2', name: 'Coding Group', description: 'Learning React and web development.', members: ['user_123', 'user_789'], owner: 'user_123' },
         { id: 'group_3', name: 'Hiking Buddies', description: 'Exploring local trails and nature.', members: ['user_123', 'user_012'], owner: 'user_456' },
+        { id: 'group_4', name: 'Gardening Enthusiasts', description: 'Sharing tips on how to grow plants and flowers.', members: ['user_123', 'user_012'], owner: 'user_456' },
+        { id: 'group_5', name: 'Movie Buffs', description: 'Discussing classic and new cinema releases.', members: ['user_123', 'user_789'], owner: 'user_123' },
     ]);
 
     const [meetups] = useState([
@@ -33,7 +35,181 @@ export default function App() {
         { id: 'meetup_4', name: 'Evening Walk', date: new Date().setHours(18, 0, 0), groupId: 'group_3' },
     ]);
     
+    // State for favorite groups to enable the "tag" feature again
     const [favoriteGroupIds] = useState(['group_1']);
+
+    // --- Create Group Component ---
+    const CreateGroupPage = () => {
+        const [groupName, setGroupName] = useState('');
+        const [description, setDescription] = useState('');
+        const [isPrivate, setIsPrivate] = useState(false);
+        const [tag, setTag] = useState('');
+        const [invite, setInvite] = useState('');
+
+        const handleCreate = (e) => {
+            e.preventDefault();
+            // In a real app, this would use Firestore to add the group
+            const newGroup = {
+                id: `group_${groups.length + 1}`,
+                name: groupName,
+                description: description,
+                isPrivate: isPrivate,
+                members: [userId],
+                owner: userId,
+            };
+            setGroups(prevGroups => [...prevGroups, newGroup]);
+            setCurrentPage('home'); // Navigate back to the homepage
+        };
+        
+        // Mock handler for the new "Add" buttons
+        const handleAddTag = () => {
+            if (tag.trim()) {
+                //alert(`Adding tag: ${tag}`);
+                // In a real app, you'd handle adding the tag here
+                setTag('');
+            }
+        };
+
+        const handleAddInvite = () => {
+            if (invite.trim()) {
+                //alert(`Inviting user: ${invite}`);
+                // In a real app, you'd handle inviting the user here
+                setInvite('');
+            }
+        };
+
+        return (
+            <div className="min-h-screen bg-gray-100 p-8 text-gray-800 font-sans">
+                {/* Header */}
+                <div className="flex items-center mb-8 text-[#113F67] space-x-4">
+                    <button onClick={() => setCurrentPage('home')} className="p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors">
+                        <ChevronLeft size={24} />
+                    </button>
+                    <h1 className="text-3xl font-bold">Create group</h1>
+                </div>
+
+                <form onSubmit={handleCreate} className="max-w-4xl mx-auto">
+                    {/* Enter group name... */}
+                    <div className="mb-6">
+                        <input
+                            type="text"
+                            value={groupName}
+                            onChange={(e) => setGroupName(e.target.value)}
+                            className="shadow appearance-none border-none rounded-xl w-full py-4 px-6 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-[#34699A] bg-[#34699A] placeholder-white"
+                            placeholder="Enter group name..."
+                            required
+                        />
+                    </div>
+                    
+                    {/* Tag, Description, and Invite layout */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div className="space-y-6">
+                            {/* Tag Input with Add Button */}
+                            <div className="flex space-x-2">
+                                <input
+                                    type="text"
+                                    value={tag}
+                                    onChange={(e) => setTag(e.target.value)}
+                                    className="shadow appearance-none border-none rounded-xl w-full py-4 px-6 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-[#34699A] bg-[#34699A] placeholder-white"
+                                    placeholder="Tag"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleAddTag}
+                                    className="bg-[#113F67] text-white px-6 py-3 rounded-xl shadow-lg hover:bg-[#34699A] transition-colors"
+                                >
+                                    Add
+                                </button>
+                            </div>
+                            {/* Description Textarea */}
+                            <textarea
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                className="shadow appearance-none border-none rounded-xl w-full py-4 px-6 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-[#34699A] h-32 resize-none bg-[#34699A] placeholder-white"
+                                placeholder="Description"
+                                required
+                            ></textarea>
+                        </div>
+
+                        {/* Invite Input with Add Button */}
+                        <div className="relative">
+                            <textarea
+                                value={invite}
+                                onChange={(e) => setInvite(e.target.value)}
+                                className="shadow appearance-none border-none rounded-xl w-full py-4 px-6 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-[#34699A] h-full resize-none bg-[#34699A] placeholder-white"
+                                placeholder="Invite..."
+                            ></textarea>
+                            <button
+                                type="button"
+                                onClick={handleAddInvite}
+                                className="absolute bottom-4 right-4 bg-[#113F67] text-white px-6 py-3 rounded-xl shadow-lg hover:bg-[#34699A] transition-colors"
+                            >
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {/* Confirm Button and Toggle */}
+                    <div className="flex justify-between items-center mt-8">
+                        <button
+                            type="submit"
+                            className="bg-[#113F67] hover:bg-[#34699A] text-white font-bold py-3 px-6 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#113F67] transition-colors"
+                        >
+                            Confirm
+                        </button>
+                        <div className="flex items-center space-x-2">
+                            <span className="text-gray-700">turn on private group</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={isPrivate}
+                                    onChange={(e) => setIsPrivate(e.target.checked)}
+                                />
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#34699A] rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[#113F67]"></div>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        );
+    };
+
+    // --- All Groups View Component ---
+    const AllGroupsPage = () => {
+        return (
+            <div className="min-h-screen bg-gray-100 p-8 text-gray-800 font-sans">
+                {/* Header */}
+                <div className="flex items-center mb-8 text-[#113F67] space-x-4">
+                    <button onClick={() => setCurrentPage('home')} className="p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors">
+                        <ChevronLeft size={24} />
+                    </button>
+                    <h1 className="text-3xl font-bold">All Groups</h1>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {groups.map(group => (
+                        <div key={group.id} className="bg-[#34699A] text-white p-6 rounded-xl shadow-lg cursor-pointer transition-transform hover:scale-105" onClick={() => alert(`Navigating to group ${group.name}`)}>
+                            <div className="flex items-center space-x-4 mb-4">
+                                <div className="p-2 bg-[#113F67] rounded-full">
+                                    <Users size={24} />
+                                </div>
+                                <h4 className="text-xl font-bold">{group.name}</h4>
+                                {favoriteGroupIds.includes(group.id) && (
+                                    <Star className="text-[#113F67]" size={24} fill="currentColor" />
+                                )}
+                            </div>
+                            <p className="text-sm opacity-80 mb-4">{group.description}</p>
+                            <div className="flex justify-end">
+                                <button className="text-white bg-[#113F67] hover:bg-gray-600 px-4 py-2 rounded-lg transition-colors">View</button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
 
     // --- Homepage Component ---
     const HomePage = () => {
@@ -54,12 +230,6 @@ export default function App() {
                    meetupDate.getMonth() === today.getMonth() &&
                    meetupDate.getDate() === today.getDate();
         });
-
-        // Mock functions for navigation
-        const mockNavigate = (page) => {
-            // In a real app, this would handle routing
-            console.log(`Navigating to ${page} page...`);
-        };
     
         return (
             <div className="min-h-screen bg-gray-100 p-8 text-gray-800 font-sans">
@@ -70,10 +240,10 @@ export default function App() {
                         <button onClick={() => setCurrentPage('calendar')} className="p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors">
                             <Calendar size={24} />
                         </button>
-                        <button onClick={() => mockNavigate('settings')} className="p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors">
+                        <button onClick={() => alert('Settings page not implemented')} className="p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors">
                             <Settings size={24} />
                         </button>
-                        <button onClick={() => mockNavigate('logout')} className="p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors">
+                        <button onClick={() => alert('Logout action not implemented')} className="p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors">
                             <LogOut size={24} />
                         </button>
                     </div>
@@ -95,12 +265,15 @@ export default function App() {
                 <div className="flex space-x-6 overflow-x-auto pb-4">
                     <div className="flex-grow grid grid-flow-col auto-cols-[300px] md:auto-cols-[350px] lg:auto-cols-fr gap-6">
                         {sortedGroups.slice(0, 3).map(group => (
-                            <div key={group.id} className="bg-[#34699A] text-white p-6 rounded-xl shadow-lg flex-shrink-0 cursor-pointer transition-transform hover:scale-105" onClick={() => mockNavigate('viewGroup')}>
+                            <div key={group.id} className="bg-[#34699A] text-white p-6 rounded-xl shadow-lg flex-shrink-0 cursor-pointer transition-transform hover:scale-105" onClick={() => alert(`Navigating to group ${group.name}`)}>
                                 <div className="flex items-center space-x-4 mb-4">
                                     <div className="p-2 bg-[#113F67] rounded-full">
                                         <Users size={24} />
                                     </div>
                                     <h4 className="text-xl font-bold">{group.name}</h4>
+                                    {favoriteGroupIds.includes(group.id) && (
+                                        <Star className="text-[#113F67]" size={24} fill="currentColor" />
+                                    )}
                                 </div>
                                 <p className="text-sm opacity-80 mb-4">{group.description}</p>
                                 <div className="flex justify-end">
@@ -110,8 +283,9 @@ export default function App() {
                         ))}
                     </div>
                     <div className="flex flex-col space-y-4 flex-shrink-0 w-48">
-                        <button onClick={() => mockNavigate('joinGroup')} className="bg-[#113F67] text-white py-3 rounded-xl shadow-lg hover:bg-[#34699A] transition-colors">Join group</button>
-                        <button onClick={() => mockNavigate('createGroup')} className="bg-[#113F67] text-white py-3 rounded-xl shadow-lg hover:bg-[#34699A] transition-colors">Create group</button>
+                        <button onClick={() => alert('Join group functionality not implemented')} className="bg-[#113F67] text-white py-3 rounded-xl shadow-lg hover:bg-[#34699A] transition-colors">Join group</button>
+                        <button onClick={() => setCurrentPage('createGroup')} className="bg-[#113F67] text-white py-3 rounded-xl shadow-lg hover:bg-[#34699A] transition-colors">Create group</button>
+                        <button onClick={() => setCurrentPage('allGroups')} className="bg-[#113F67] text-white py-3 rounded-xl shadow-lg hover:bg-[#34699A] transition-colors">View all groups</button>
                     </div>
                 </div>
 
@@ -272,6 +446,10 @@ export default function App() {
                 return <HomePage />;
             case 'calendar':
                 return <CalendarView />;
+            case 'createGroup':
+                return <CreateGroupPage />;
+            case 'allGroups':
+                return <AllGroupsPage />;
             default:
                 return <HomePage />;
         }
