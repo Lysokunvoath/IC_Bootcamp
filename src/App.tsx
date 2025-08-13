@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, LogOut, Calendar, Users, Settings, ChevronLeft, ChevronRight, Star, Plus, UserPlus } from 'lucide-react';
+import { Home, LogOut, Calendar, Users, Settings, ChevronLeft, ChevronRight, Star, Plus, UserPlus, Copy, Search } from 'lucide-react';
 import { format, startOfWeek, addDays, isSameDay, isSameMonth } from 'date-fns';
 
 // This is a self-contained application with the Home, Calendar, and a new Create Group page.
@@ -21,11 +21,14 @@ export default function App() {
 
     // State for groups and meetups, now mutable
     const [groups, setGroups] = useState([
-        { id: 'group_1', name: 'Book Club', description: 'Reading classic literature together.', members: ['user_123', 'user_456'], owner: 'user_123' },
-        { id: 'group_2', name: 'Coding Group', description: 'Learning React and web development.', members: ['user_123', 'user_789'], owner: 'user_123' },
-        { id: 'group_3', name: 'Hiking Buddies', description: 'Exploring local trails and nature.', members: ['user_123', 'user_012'], owner: 'user_456' },
-        { id: 'group_4', name: 'Gardening Enthusiasts', description: 'Sharing tips on how to grow plants and flowers.', members: ['user_123', 'user_012'], owner: 'user_456' },
-        { id: 'group_5', name: 'Movie Buffs', description: 'Discussing classic and new cinema releases.', members: ['user_123', 'user_789'], owner: 'user_123' },
+        { id: 'group_1', name: 'Book Club', description: 'Reading classic literature together.', members: ['user_123', 'user_456'], owner: 'user_123', isPublic: true },
+        { id: 'group_2', name: 'Coding Group', description: 'Learning React and web development.', members: ['user_123', 'user_789'], owner: 'user_123', isPublic: true },
+        { id: 'group_3', name: 'Hiking Buddies', description: 'Exploring local trails and nature.', members: ['user_123', 'user_012'], owner: 'user_456', isPublic: true },
+        { id: 'group_4', name: 'Gardening Enthusiasts', description: 'Sharing tips on how to grow plants and flowers.', members: ['user_123', 'user_012'], owner: 'user_456', isPublic: true },
+        { id: 'group_5', name: 'Movie Buffs', description: 'Discussing classic and new cinema releases.', members: ['user_123', 'user_789'], owner: 'user_123', isPublic: false },
+        { id: 'group_6', name: 'Photography Guild', description: 'Sharing and critiquing photography work.', members: ['user_888', 'user_999'], owner: 'user_888', isPublic: true },
+        { id: 'group_7', name: 'Cooking Club', description: 'Trying out new recipes and techniques together.', members: ['user_111', 'user_222'], owner: 'user_111', isPublic: true },
+        { id: 'group_8', name: 'Board Game Night', description: 'Weekly gatherings for board games.', members: ['user_333', 'user_444'], owner: 'user_333', isPublic: false },
     ]);
 
     const [meetups] = useState([
@@ -56,6 +59,7 @@ export default function App() {
                 isPrivate: isPrivate,
                 members: [userId],
                 owner: userId,
+                isPublic: !isPrivate,
             };
             setGroups(prevGroups => [...prevGroups, newGroup]);
             setCurrentPage('home'); // Navigate back to the homepage
@@ -64,7 +68,6 @@ export default function App() {
         // Mock handler for the new "Add" buttons
         const handleAddTag = () => {
             if (tag.trim()) {
-                //alert(`Adding tag: ${tag}`);
                 // In a real app, you'd handle adding the tag here
                 setTag('');
             }
@@ -72,7 +75,6 @@ export default function App() {
 
         const handleAddInvite = () => {
             if (invite.trim()) {
-                //alert(`Inviting user: ${invite}`);
                 // In a real app, you'd handle inviting the user here
                 setInvite('');
             }
@@ -180,11 +182,16 @@ export default function App() {
         return (
             <div className="min-h-screen bg-gray-100 p-8 text-gray-800 font-sans">
                 {/* Header */}
-                <div className="flex items-center mb-8 text-[#113F67] space-x-4">
-                    <button onClick={() => setCurrentPage('home')} className="p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors">
-                        <ChevronLeft size={24} />
+                <div className="flex items-center justify-between mb-8 text-[#113F67]">
+                    <div className="flex items-center space-x-4">
+                        <button onClick={() => setCurrentPage('home')} className="p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors">
+                            <ChevronLeft size={24} />
+                        </button>
+                        <h1 className="text-3xl font-bold">All Groups</h1>
+                    </div>
+                    <button onClick={() => setCurrentPage('createGroup')} className="bg-[#113F67] text-white px-6 py-3 rounded-xl shadow-lg hover:bg-[#34699A] transition-colors">
+                        Create new group
                     </button>
-                    <h1 className="text-3xl font-bold">All Groups</h1>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -210,6 +217,124 @@ export default function App() {
         );
     };
 
+    // --- Join Group Component (Redesigned) ---
+    const JoinGroupPage = () => {
+        const [searchTerm, setSearchTerm] = useState('');
+        const [message, setMessage] = useState('');
+
+        const publicGroups = groups.filter(group => group.isPublic);
+
+        const filteredGroups = publicGroups.filter(group => 
+            group.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        const handleJoinGroup = (groupId) => {
+            const groupToJoin = groups.find(g => g.id === groupId);
+
+            if (groupToJoin && !groupToJoin.members.includes(userId)) {
+                setGroups(prevGroups => prevGroups.map(group =>
+                    group.id === groupId
+                        ? { ...group, members: [...group.members, userId] }
+                        : group
+                ));
+                setMessage(`Successfully joined "${groupToJoin.name}"!`);
+                setTimeout(() => setMessage(''), 3000);
+            } else if (groupToJoin.members.includes(userId)) {
+                setMessage(`You are already a member of "${groupToJoin.name}".`);
+                setTimeout(() => setMessage(''), 3000);
+            }
+        };
+
+        const handleCopyGroupId = (groupId) => {
+            // In a real app, you would use navigator.clipboard.writeText(groupId)
+            // For now, we'll use a mock alert
+            setMessage(`Copied group ID: ${groupId} to clipboard!`);
+            setTimeout(() => setMessage(''), 3000);
+        };
+
+        return (
+            <div className="min-h-screen bg-gray-100 p-8 text-gray-800 font-sans">
+                {/* Header */}
+                <div className="flex items-center mb-8 text-[#113F67] space-x-4">
+                    <button onClick={() => setCurrentPage('home')} className="p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors">
+                        <ChevronLeft size={24} />
+                    </button>
+                    <h1 className="text-3xl font-bold">Join group</h1>
+                </div>
+
+                {/* Main Content Card */}
+                <div className="bg-[#113F67] text-white p-6 rounded-xl shadow-lg max-w-4xl mx-auto">
+                    {/* Public Group Header and Search */}
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold">Public group</h2>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                className="bg-[#34699A] text-white rounded-xl py-2 pl-4 pr-10 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#34699A] transition-colors"
+                                placeholder="Search..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-white" size={20} />
+                        </div>
+                    </div>
+                    
+                    {/* Message Box */}
+                    {message && (
+                        <div className="bg-[#34699A] text-white text-center py-3 rounded-xl mb-4 transition-opacity duration-300">
+                            {message}
+                        </div>
+                    )}
+
+                    {/* Group List */}
+                    <div className="space-y-4">
+                        {filteredGroups.length > 0 ? (
+                            filteredGroups.map(group => (
+                                <div key={group.id} className="bg-[#34699A] text-white p-4 rounded-xl shadow-md flex justify-between items-center">
+                                    <div className="flex-1 flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                                        <span className="font-bold">{group.name}</span>
+                                        <span className="text-sm opacity-80">Members: {group.members.length}</span>
+                                        <span className="text-sm opacity-80">{group.isPublic ? 'Public' : 'Private'}</span>
+                                    </div>
+                                    <div className="flex space-x-2 items-center">
+                                        {!group.members.includes(userId) && (
+                                            <button 
+                                                onClick={() => handleJoinGroup(group.id)} 
+                                                className="p-2 bg-[#113F67] rounded-full hover:bg-green-500 transition-colors"
+                                                title="Join Group"
+                                            >
+                                                <UserPlus size={20} />
+                                            </button>
+                                        )}
+                                        <button 
+                                            onClick={() => handleCopyGroupId(group.id)} 
+                                            className="p-2 bg-[#113F67] rounded-full hover:bg-gray-500 transition-colors"
+                                            title="Copy Group ID"
+                                        >
+                                            <Copy size={20} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-center text-gray-400">No public groups found.</p>
+                        )}
+                    </div>
+                    
+                    {/* Pagination Mock */}
+                    <div className="flex justify-center items-center mt-6 text-gray-300">
+                        <button className="p-2 hover:text-white transition-colors">
+                            <ChevronLeft size={24} />
+                        </button>
+                        <span className="px-4">Page 1/2</span>
+                        <button className="p-2 hover:text-white transition-colors">
+                            <ChevronRight size={24} />
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     // --- Homepage Component ---
     const HomePage = () => {
@@ -283,7 +408,7 @@ export default function App() {
                         ))}
                     </div>
                     <div className="flex flex-col space-y-4 flex-shrink-0 w-48">
-                        <button onClick={() => alert('Join group functionality not implemented')} className="bg-[#113F67] text-white py-3 rounded-xl shadow-lg hover:bg-[#34699A] transition-colors">Join group</button>
+                        <button onClick={() => setCurrentPage('joinGroup')} className="bg-[#113F67] text-white py-3 rounded-xl shadow-lg hover:bg-[#34699A] transition-colors">Join group</button>
                         <button onClick={() => setCurrentPage('createGroup')} className="bg-[#113F67] text-white py-3 rounded-xl shadow-lg hover:bg-[#34699A] transition-colors">Create group</button>
                         <button onClick={() => setCurrentPage('allGroups')} className="bg-[#113F67] text-white py-3 rounded-xl shadow-lg hover:bg-[#34699A] transition-colors">View all groups</button>
                     </div>
@@ -450,6 +575,8 @@ export default function App() {
                 return <CreateGroupPage />;
             case 'allGroups':
                 return <AllGroupsPage />;
+            case 'joinGroup':
+                return <JoinGroupPage />;
             default:
                 return <HomePage />;
         }
