@@ -1,14 +1,23 @@
-import { Home, LogOut, Calendar, Users, Settings, Star } from 'lucide-react';
-import { format } from 'date-fns';
+import { LogOut, Calendar, Users, Settings, Star } from 'lucide-react';
 
 // Helper function to format a time string
-const formatTime = (date) => {
-    if (!date) return 'N/A';
-    const options = { hour: '2-digit', minute: '2-digit', hour12: true };
-    return new Date(date).toLocaleTimeString('en-US', options);
+const formatTime = (date: any) => {
+  if (!date) return "N/A";
+  const options: Intl.DateTimeFormatOptions = {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  };
+  return new Date(date).toLocaleTimeString("en-US", options);
 };
 
-export default function HomePage({ groups, meetups, favoriteGroupIds, setCurrentPage, navigateToGroupDetail, userId }) {
+export default function HomePage({
+  groups,
+  meetups,
+  favoriteGroupIds,
+  setCurrentPage,
+  navigateToGroupDetail,
+}: any) {
     const sortedGroups = [...groups].sort((a, b) => {
         const aIsFavorite = favoriteGroupIds.includes(a.id);
         const bIsFavorite = favoriteGroupIds.includes(b.id);
@@ -18,7 +27,7 @@ export default function HomePage({ groups, meetups, favoriteGroupIds, setCurrent
     });
 
     const today = new Date();
-    const todayMeetups = meetups.filter(meetup => {
+    const todayMeetups = meetups.filter((meetup: any) => {
         const meetupDate = new Date(meetup.date);
         return meetupDate &&
                meetupDate.getFullYear() === today.getFullYear() &&
@@ -90,11 +99,11 @@ export default function HomePage({ groups, meetups, favoriteGroupIds, setCurrent
                 </div>
                 {todayMeetups.length > 0 ? (
                     <div className="space-y-4">
-                        {todayMeetups.map(meetup => (
+                        {todayMeetups.map((meetup: any) => (
                             <div key={meetup.id} className="grid grid-cols-3 text-md">
                                 <span>{meetup.name}</span>
                                 <span>{formatTime(new Date(meetup.date))}</span>
-                                <span>{groups.find(g => g.id === meetup.groupId)?.name || 'N/A'}</span>
+                                <span>{groups.find((g: any) => g.id === meetup.groupId)?.name || 'N/A'}</span>
                             </div>
                         ))}
                     </div>
