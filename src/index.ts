@@ -5,4 +5,3 @@ import { drizzle } from "drizzle-orm/mysql2";
 const connection = await mysql.createConnection(process.env.DATABASE_URL as string);
 const db = drizzle(connection);
 
-// Now you can use `db` for queries

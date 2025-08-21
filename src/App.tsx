@@ -6,6 +6,7 @@ import AllGroupsPage from "./AllGroupPage";
 import JoinGroupPage from "./JoinGroupPage";
 import GroupDetailPage from "./GroupDetailPage";
 import AddActivityPage from "./AddActivityPage";
+import LandingPage from "./LandingPage";
 
 // Main App component responsible for state management and routing
 export default function App() {
@@ -191,7 +192,7 @@ export default function App() {
 
   return (
     <div className="font-sans antialiased text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-900 min-h-screen">
-      {renderPage()}
+      <LandingPage />
     </div>
   );
 }
