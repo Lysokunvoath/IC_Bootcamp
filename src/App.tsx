@@ -1,17 +1,34 @@
-import { useState } from "react";
-import HomePage from "./HomePage";
-import CalendarView from "./CalendarView";
-import CreateGroupPage from "./CreateGroupPage";
-import AllGroupsPage from "./AllGroupPage";
-import JoinGroupPage from "./JoinGroupPage";
-import GroupDetailPage from "./GroupDetailPage";
-import AddActivityPage from "./AddActivityPage";
-import LandingPage from "./LandingPage";
+import { useEffect, useState } from "react";
+import HomePage from "./pages/HomePage";
+import CalendarView from "./pages/CalendarView";
+import CreateGroupPage from "./pages/CreateGroupPage";
+import AllGroupsPage from "./pages/AllGroupPage";
+import JoinGroupPage from "./pages/JoinGroupPage";
+import GroupDetailPage from "./pages/GroupDetailPage";
+import AddActivityPage from "./pages/AddActivityPage";
+import LandingPage from "./pages/LandingPage";
+import { supabase } from "./supabaseClient";
 
 // Main App component responsible for state management and routing
 export default function App() {
-  // Mock user ID
-  const userId = "user_123";
+  // Track Supabase user
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Get current session
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null);
+      setLoading(false);
+    });
+    // Listen for auth changes
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
 
   // State to manage which page is currently displayed
   const [currentPage, setCurrentPage] = useState("home");
@@ -137,13 +154,13 @@ export default function App() {
             favoriteGroupIds={favoriteGroupIds}
             setCurrentPage={setCurrentPage}
             navigateToGroupDetail={navigateToGroupDetail}
-            userId={userId}
+            userId={user?.id}
           />
         );
       case "calendar":
         return <CalendarView groups={groups} meetups={meetups} setCurrentPage={setCurrentPage} />;
       case "createGroup":
-        return <CreateGroupPage setGroups={setGroups} setCurrentPage={setCurrentPage} userId={userId} />;
+        return <CreateGroupPage setGroups={setGroups} setCurrentPage={setCurrentPage} userId={user?.id} />;
       case "allGroups":
         return (
           <AllGroupsPage
@@ -154,7 +171,7 @@ export default function App() {
           />
         );
       case "joinGroup":
-        return <JoinGroupPage groups={groups} setGroups={setGroups} userId={userId} setCurrentPage={setCurrentPage} />;
+        return <JoinGroupPage groups={groups} setGroups={setGroups} userId={user?.id} setCurrentPage={setCurrentPage} />;
       case "groupDetail":
         return (
           <GroupDetailPage
@@ -162,7 +179,7 @@ export default function App() {
             setGroups={setGroups}
             meetups={meetups}
             selectedGroupId={selectedGroupId}
-            userId={userId}
+            userId={user?.id}
             setCurrentPage={setCurrentPage}
             navigateToAddActivity={navigateToAddActivity}
           />
@@ -184,15 +201,19 @@ export default function App() {
             favoriteGroupIds={favoriteGroupIds}
             setCurrentPage={setCurrentPage}
             navigateToGroupDetail={navigateToGroupDetail}
-            userId={userId}
+            userId={user?.id}
           />
         );
     }
   };
 
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
   return (
     <div className="font-sans antialiased text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-900 min-h-screen">
-      <LandingPage />
+      <div>{!user ? <LandingPage /> : renderPage()}</div>
     </div>
   );
 }
