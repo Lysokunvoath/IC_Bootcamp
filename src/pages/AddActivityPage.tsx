@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ChevronLeft } from "lucide-react";
+import { supabase } from "../supabaseClient";
 
 export default function AddActivityPage({
   selectedGroupId,
@@ -12,7 +13,7 @@ export default function AddActivityPage({
   const [description, setDescription] = useState("");
   const [message, setMessage] = useState("");
 
-  const handleAddActivity = (e: any) => {
+  const handleAddActivity = async (e: any) => {
     e.preventDefault();
     const [hour, minute] = time.split(":").map(Number);
     const now = new Date();
@@ -23,19 +24,33 @@ export default function AddActivityPage({
       hour,
       minute
     );
-    const newMeetup = {
-      id: `meetup_${meetups.length + 1}`,
-      name: subject,
-      date: activityDate,
-      groupId: selectedGroupId,
-      description: description,
-    };
-    setMeetups((prevMeetups: any) => [...prevMeetups, newMeetup]);
-    setMessage("Activity added successfully!");
-    setTimeout(() => {
-      setMessage("");
-      setCurrentPage("groupDetail");
-    }, 1500);
+
+    try {
+      const { data, error } = await supabase.from("meetups").insert({
+        name: subject,
+        date: activityDate.toISOString(),
+        group_id: selectedGroupId,
+      });
+
+      if (error) throw error;
+
+      // To be removed once App.tsx is refactored
+      const newMeetup = {
+        id: data ? (data as any)[0].id : `meetup_${meetups.length + 1}`,
+        name: subject,
+        date: activityDate,
+        groupId: selectedGroupId,
+      };
+      setMeetups((prevMeetups: any) => [...prevMeetups, newMeetup]);
+
+      setMessage("Activity added successfully!");
+      setTimeout(() => {
+        setMessage("");
+        setCurrentPage("groupDetail");
+      }, 1500);
+    } catch (error: any) {
+      alert(error.message);
+    }
   };
 
   return (

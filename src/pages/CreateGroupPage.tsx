@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ChevronLeft } from "lucide-react";
+import { supabase } from "../supabaseClient";
 
 export default function CreateGroupPage({
   setGroups,
@@ -12,19 +13,48 @@ export default function CreateGroupPage({
   const [tag, setTag] = useState("");
   const [invite, setInvite] = useState("");
 
-  const handleCreate = (e: any) => {
+  const handleCreate = async (e: any) => {
     e.preventDefault();
-    const newGroup = {
-      id: `group_${Math.random().toString(36).substr(2, 9)}`,
-      name: groupName,
-      description: description,
-      isPrivate: isPrivate,
-      members: [userId],
-      owner: userId,
-      isPublic: !isPrivate,
-    };
-    setGroups((prevGroups: any) => [...prevGroups, newGroup]);
-    setCurrentPage("home");
+    try {
+      const { data: groupData, error: groupError } = await supabase
+        .from("groups")
+        .insert({
+          name: groupName,
+          description: description,
+          is_public: !isPrivate,
+          owner: userId,
+        })
+        .select()
+        .single();
+
+      if (groupError) throw groupError;
+
+      if (groupData) {
+        const { error: memberError } = await supabase
+          .from("group_members")
+          .insert({
+            group_id: groupData.id,
+            user_id: userId,
+          });
+
+        if (memberError) throw memberError;
+      }
+
+      // To be removed once App.tsx is refactored
+      const newGroup = {
+        id: groupData.id,
+        name: groupName,
+        description: description,
+        isPublic: !isPrivate,
+        owner: userId,
+        members: [userId],
+      };
+      setGroups((prevGroups: any) => [...prevGroups, newGroup]);
+
+      setCurrentPage("home");
+    } catch (error: any) {
+      alert(error.message);
+    }
   };
 
   const handleAddTag = () => {

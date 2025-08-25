@@ -1,4 +1,5 @@
 import { LogOut, Calendar, Users, Settings, Star } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 
 // Helper function to format a time string
 const formatTime = (date: any) => {
@@ -35,6 +36,10 @@ export default function HomePage({
                meetupDate.getDate() === today.getDate();
     });
 
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+    };
+
     return (
         <div className="min-h-screen bg-gray-100 p-8 text-gray-800 font-sans">
             <div className="flex justify-between items-center mb-8 text-[#113F67]">
@@ -46,7 +51,7 @@ export default function HomePage({
                     <button onClick={() => alert('Settings page not implemented')} className="p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors">
                         <Settings size={24} />
                     </button>
-                    <button onClick={() => alert('Logout action not implemented')} className="p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors">
+                    <button onClick={handleLogout} className="p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors">
                         <LogOut size={24} />
                     </button>
                 </div>
