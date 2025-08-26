@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "../supabaseClient";
 import { ChevronLeft, Search, UserPlus, Copy, ChevronRight } from "lucide-react";
 
 export default function JoinGroupPage({
@@ -16,21 +17,38 @@ export default function JoinGroupPage({
     group.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleJoinGroup = (groupId: any) => {
+  const handleJoinGroup = async (groupId: any) => {
     const groupToJoin = groups.find((g: any) => g.id === groupId);
 
-    if (groupToJoin && !groupToJoin.members.includes(userId)) {
-      setGroups((prevGroups: any) =>
-        prevGroups.map((group: any) =>
-          group.id === groupId
-            ? { ...group, members: [...group.members, userId] }
-            : group
-        )
-      );
-      setMessage(`Successfully joined "${groupToJoin.name}"!`);
-      setTimeout(() => setMessage(""), 3000);
-    } else if (groupToJoin.members.includes(userId)) {
-      setMessage(`You are already a member of "${groupToJoin.name}".`);
+    if (!groupToJoin) return;
+
+    try {
+      const { error } = await supabase.from("group_members").insert({
+        group_id: groupId,
+        user_id: userId,
+      });
+
+      if (error) {
+        if (error.code === '23505') { // Unique violation error code for duplicate entry
+          setMessage(`You are already a member of "${groupToJoin.name}".`);
+        } else {
+          throw error;
+        }
+      } else {
+        // Update local state to reflect the join
+        setGroups((prevGroups: any) =>
+          prevGroups.map((group: any) =>
+            group.id === groupId
+              ? { ...group, members: [...(group.members || []), userId] }
+              : group
+          )
+        );
+        setMessage(`Successfully joined "${groupToJoin.name}"!`);
+      }
+    } catch (error: any) {
+      console.error("Error joining group:", error);
+      setMessage(`Failed to join "${groupToJoin.name}": ${error.message}`);
+    } finally {
       setTimeout(() => setMessage(""), 3000);
     }
   };

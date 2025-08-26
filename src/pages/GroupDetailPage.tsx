@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "../supabaseClient";
 import { ChevronLeft, Star, Copy } from "lucide-react";
 
 export default function GroupDetailPage({
@@ -13,25 +14,59 @@ export default function GroupDetailPage({
   const group = groups.find((g: any) => g.id === selectedGroupId);
   const [message, setMessage] = useState("");
   const [isAddMemberModalOpen, setAddMemberModalOpen] = useState(false);
+  const [groupMembers, setGroupMembers] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchGroupMembers = async () => {
+      if (selectedGroupId) {
+        const { data, error } = await supabase
+          .from("group_members")
+          .select("user_id")
+          .eq("group_id", selectedGroupId);
+
+        if (error) {
+          console.error("Error fetching group members:", error);
+        } else {
+          setGroupMembers(data.map((member: any) => member.user_id));
+        }
+      }
+    };
+    fetchGroupMembers();
+  }, [selectedGroupId]);
   const [newMemberId, setNewMemberId] = useState("");
 
-  const members = group?.members || [];
-  const isMember = members.includes(userId);
-  const isOwner = group?.owner === userId;
+  const members = groupMembers;
+  const isMember = groupMembers.includes(userId);
+  const isOwner = group?.user_id === userId;
 
-  const handleTogglePrivate = () => {
+  const handleTogglePrivate = async () => {
     if (!group) return;
-    setGroups((prevGroups: any) =>
-      prevGroups.map((g: any) =>
-        g.id === group.id
-          ? { ...g, isPublic: !g.isPublic }
-          : g
-      )
-    );
-    setMessage(
-      `Group "${group.name}" is now ${group.isPublic ? "private" : "public"}.`
-    );
-    setTimeout(() => setMessage(""), 3000);
+    const newIsPublic = !group.isPublic;
+    try {
+      const { error } = await supabase
+        .from("groups")
+        .update({ is_public: newIsPublic })
+        .eq("id", group.id);
+
+      if (error) throw error;
+
+      // Update local state only after successful DB update
+      setGroups((prevGroups: any) =>
+        prevGroups.map((g: any) =>
+          g.id === group.id
+            ? { ...g, isPublic: newIsPublic }
+            : g
+        )
+      );
+      setMessage(
+        `Group "${group.name}" is now ${newIsPublic ? "public" : "private"}.`
+      );
+    } catch (error: any) {
+      console.error("Error toggling group privacy:", error);
+      setMessage(`Failed to change privacy: ${error.message}`);
+    } finally {
+      setTimeout(() => setMessage(""), 3000);
+    }
   };
 
   const upcomingMeetups = meetups.filter(
@@ -55,26 +90,45 @@ export default function GroupDetailPage({
     setTimeout(() => setMessage(""), 3000);
   };
 
-  const handleConfirmAddMember = () => {
+  const handleConfirmAddMember = async () => {
     if (!group || !newMemberId) {
       setMessage("Please enter a valid member ID.");
       setTimeout(() => setMessage(""), 3000);
       return;
     }
-    if (group.members.includes(newMemberId)) {
-      setMessage(`User ${newMemberId} is already a member.`);
-      setTimeout(() => setMessage(""), 3000);
-    } else {
-      setGroups((prevGroups: any) =>
-        prevGroups.map((g: any) =>
-          g.id === group.id
-            ? { ...g, members: [...g.members, newMemberId] }
-            : g
-        )
-      );
-      setMessage(`User ${newMemberId} has been added to the group.`);
-      setNewMemberId("");
-      setAddMemberModalOpen(false);
+
+    try {
+      const { error } = await supabase.from("group_members").insert({
+        group_id: group.id,
+        user_id: newMemberId,
+      });
+
+      if (error) {
+        if (error.code === '23505') { // Unique violation error code
+          setMessage(`User ${newMemberId} is already a member.`);
+        } else {
+          throw error;
+        }
+      } else {
+        // Update local state to reflect the new member
+        // This assumes `members` is now fetched from DB or updated after successful insert
+        // For simplicity, we'll just update the local group object's members array
+        // In a real app, you might re-fetch the group or its members
+        setGroups((prevGroups: any) =>
+          prevGroups.map((g: any) =>
+            g.id === group.id
+              ? { ...g, members: [...(g.members || []), newMemberId] } // Add new member to local state
+              : g
+          )
+        );
+        setMessage(`User ${newMemberId} has been added to the group.`);
+        setNewMemberId("");
+        setAddMemberModalOpen(false);
+      }
+    } catch (error: any) {
+      console.error("Error adding member:", error);
+      setMessage(`Failed to add member: ${error.message}`);
+    } finally {
       setTimeout(() => setMessage(""), 3000);
     }
   };

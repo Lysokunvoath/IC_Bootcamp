@@ -7,6 +7,7 @@ export default function AddActivityPage({
   meetups,
   setMeetups,
   setCurrentPage,
+  userId,
 }: any) {
   const [subject, setSubject] = useState("");
   const [time, setTime] = useState("");
@@ -30,6 +31,7 @@ export default function AddActivityPage({
         name: subject,
         date: activityDate.toISOString(),
         group_id: selectedGroupId,
+        user_id: userId,
       });
 
       if (error) throw error;
@@ -40,6 +42,7 @@ export default function AddActivityPage({
         name: subject,
         date: activityDate,
         groupId: selectedGroupId,
+        user_id: userId,
       };
       setMeetups((prevMeetups: any) => [...prevMeetups, newMeetup]);
 

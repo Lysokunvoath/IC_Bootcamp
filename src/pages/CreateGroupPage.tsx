@@ -22,7 +22,7 @@ export default function CreateGroupPage({
           name: groupName,
           description: description,
           is_public: !isPrivate,
-          owner: userId,
+          user_id: userId,
         })
         .select()
         .single();

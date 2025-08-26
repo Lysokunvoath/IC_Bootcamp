@@ -116,6 +116,7 @@ export default function App() {
             meetups={meetups}
             setMeetups={setMeetups}
             setCurrentPage={setCurrentPage}
+            userId={user?.id}
           />
         );
       default:
