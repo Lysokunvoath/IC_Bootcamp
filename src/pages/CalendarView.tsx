@@ -1,73 +1,116 @@
-import React from "react";
-import { ChevronLeft } from 'lucide-react';
-import { isSameDay } from 'date-fns';
+import { useState } from "react";
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { format, startOfWeek, addDays, isSameDay, getHours } from 'date-fns';
 
 export default function CalendarView({
   groups,
   meetups,
   setCurrentPage,
+  navigateToGroupDetail,
 }: any) {
-    const days = Array.from({ length: 7 }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() + i);
-        return date;
-    });
+    const [currentDate, setCurrentDate] = useState(new Date());
 
+    const weekStartsOn = 1; // Monday
+    const weekStart = startOfWeek(currentDate, { weekStartsOn });
+
+    const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
     const hours = Array.from({ length: 24 }, (_, i) => i);
 
-    const meetupsInWeek = meetups.filter((meetup: any) => {
-        const meetupDate = new Date(meetup.date);
-        return meetupDate >= days[0] && meetupDate <= days[days.length - 1];
-    });
+    const handlePrevWeek = () => {
+        setCurrentDate(addDays(currentDate, -7));
+    };
+
+    const handleNextWeek = () => {
+        setCurrentDate(addDays(currentDate, 7));
+    };
+
+    const getMeetupsForDay = (day: Date) => {
+        return meetups.filter((meetup: any) => {
+            const meetupDateTime = new Date(meetup.date_time);
+            return isSameDay(meetupDateTime, day);
+        });
+    };
 
     return (
-        <div className="min-h-screen bg-gray-100 p-8 text-gray-800 font-sans">
-            <div className="flex items-center mb-8 text-[#113F67] space-x-4">
-                <button onClick={() => setCurrentPage('home')} className="p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors">
-                    <ChevronLeft size={24} />
-                </button>
-                <h1 className="text-3xl font-bold">Calendar (Not Implemented)</h1>
-            </div>
-            <div className="bg-[#113F67] text-white p-6 rounded-xl shadow-lg max-w-4xl mx-auto text-center">
-                <p>This is a placeholder for the Calendar View.</p>
-                <p>Implement your calendar UI here.</p>
-            </div>
-            <div className="grid grid-cols-8 gap-4 mt-8">
-                <div className="col-span-1"></div>
-                {days.map(day => (
-                    <div key={day.toString()} className="col-span-1 text-sm font-semibold text-gray-600">
-                        {day.toLocaleDateString('default', { weekday: 'short' })}
-                    </div>
-                ))}
-                {hours.map(hour => (
-                    <React.Fragment key={hour}>
-                        <div className="col-span-1 text-sm font-semibold text-gray-600 flex items-start pt-2">
-                            {hour % 12 === 0 ? 12 : hour % 12} {hour < 12 ? 'am' : 'pm'}
-                        </div>
-                        {days.map((day, dayIndex) => (
-                            <div key={`${dayIndex}-${hour}`} className="col-span-1 border-t border-gray-200 relative min-h-[50px] overflow-hidden">
-                                {meetupsInWeek.map((meetup: any) => {
-                                    const meetupDate = new Date(meetup.date);
-                                    const meetupHour = meetupDate.getHours();
-                                    if (isSameDay(meetupDate, day) && meetupHour === hour) {
-                                        const group = groups.find((g: any) => g.id === meetup.groupId) || {};
-                                        return (
-                                            <div
-                                                key={meetup.id}
-                                                className="absolute top-0 left-0 right-0 p-2 m-1 rounded-lg text-white bg-[#113F67] shadow-md z-10 text-xs font-medium"
-                                                style={{ height: 'calc(50px * 1)' }}
-                                            >
-                                                <p className="font-bold truncate">{group.name}</p>
-                                                <p className="truncate">{meetup.name}</p>
-                                            </div>
-                                        );
-                                    }
-                                    return null;
-                                })}
+        <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
+            <header className="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-20">
+                <div className="flex items-center space-x-4">
+                    <button onClick={() => setCurrentPage('home')} className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition-colors">
+                        <ChevronLeft size={22} />
+                    </button>
+                    <h1 className="text-2xl font-bold text-gray-800">Calendar</h1>
+                </div>
+                <div className="flex items-center space-x-4">
+                    <button onClick={handlePrevWeek} className="p-2 rounded-full text-gray-500 hover:bg-gray-100">
+                        <ChevronLeft size={20} />
+                    </button>
+                    <span className="font-semibold text-gray-700 text-lg">{format(currentDate, 'MMMM yyyy')}</span>
+                    <button onClick={handleNextWeek} className="p-2 rounded-full text-gray-500 hover:bg-gray-100">
+                        <ChevronRight size={20} />
+                    </button>
+                </div>
+            </header>
+
+            <div className="flex-grow p-8 flex flex-col">
+                <div className="grid grid-cols-[auto,1fr] flex-grow">
+                    {/* Time Gutter */}
+                    <div>
+                        <div className="h-16"></div> {/* Spacer for day headers */}
+                        {hours.map(hour => (
+                            <div key={hour} className="h-16 flex justify-end pr-4">
+                                <span className="text-sm text-gray-500 -translate-y-1/2">
+                                    {format(new Date(0, 0, 0, hour), 'ha')}
+                                </span>
                             </div>
                         ))}
-                    </React.Fragment>
-                ))}
+                    </div>
+
+                    {/* Calendar Grid */}
+                    <div className="grid grid-cols-7 border-l border-gray-200 flex-grow">
+                        {/* Day Headers */}
+                        {days.map(day => (
+                            <div key={day.toString()} className="text-center py-4 border-b border-r border-gray-200">
+                                <p className="text-sm text-gray-500">{format(day, 'EEE')}</p>
+                                <p className={`text-2xl font-bold ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-gray-700'}`}>
+                                    {format(day, 'd')}
+                                </p>
+                            </div>
+                        ))}
+
+                        {/* Grid Cells */}
+                        <div className="col-span-7 grid grid-cols-7 grid-rows-24">
+                        {
+                            days.map(day => (
+                                <div key={day.toISOString()} className="relative border-r border-gray-200 grid grid-rows-24">
+                                    {hours.map(hour => (
+                                        <div key={hour} className="h-16 border-b border-gray-200 relative">
+                                            {getMeetupsForDay(day)
+                                                .filter((meetup: any) => getHours(new Date(meetup.date_time)) === hour)
+                                                .map((meetup: any) => {
+                                                    const meetupDateTime = new Date(meetup.date_time);
+                                                    const minutes = meetupDateTime.getMinutes();
+                                                    const topOffset = (minutes / 60) * 4; // 4rem per hour
+                                                    const group = groups.find((g: any) => g.id === meetup.group_id); // Corrected group_id
+                                                    return (
+                                                        <div
+                                                            key={meetup.id}
+                                                            onClick={() => navigateToGroupDetail(meetup.group_id)} // Corrected group_id
+                                                            className="absolute w-full p-2 rounded-lg text-white bg-blue-500 hover:bg-blue-600 shadow-md z-10 text-xs font-medium cursor-pointer transition-all"
+                                                            style={{ top: `${topOffset}rem`, height: '2rem' }} // Fixed height for simplicity, can be dynamic
+                                                        >
+                                                            <p className="font-bold truncate">{meetup.title}</p>
+                                                            {group && <p className="truncate">{group.name}</p>}
+                                                        </div>
+                                                    );
+                                                })}
+                                        </div>
+                                    ))}
+                                </div>
+                            ))
+                        }
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

@@ -41,13 +41,38 @@ export default function App() {
   useEffect(() => {
     if (user) {
       const fetchGroups = async () => {
-        const { data, error } = await supabase.from("groups").select("* ");
+        const { data, error } = await supabase.from("groups").select("*, members:group_members(user_id)");
         if (error) console.error("Error fetching groups:", error);
-        else setGroups(data);
+        else {
+          // Map is_public to isPublic for frontend consistency
+          const mappedData = data.map((group: any) => ({
+            ...group,
+            isPublic: group.is_public, // Map snake_case from DB to camelCase for frontend
+          }));
+          setGroups(mappedData);
+        }
       };
 
       const fetchMeetups = async () => {
-        const { data, error } = await supabase.from("meetups").select("*");
+        // First, get the group IDs the user is a member of
+        const { data: memberGroups, error: memberError } = await supabase
+          .from("group_members")
+          .select("group_id")
+          .eq("user_id", user.id);
+
+        if (memberError) {
+          console.error("Error fetching user's group memberships:", memberError);
+          return;
+        }
+
+        const groupIds = memberGroups.map((mg: any) => mg.group_id);
+
+        // Then, fetch meetups only for those groups
+        const { data, error } = await supabase
+          .from("meetups")
+          .select("*")
+          .in("group_id", groupIds); // Use .in() to filter by multiple group IDs
+
         if (error) console.error("Error fetching meetups:", error);
         else setMeetups(data);
       };
@@ -83,7 +108,7 @@ export default function App() {
           />
         );
       case "calendar":
-        return <CalendarView groups={groups} meetups={meetups} setCurrentPage={setCurrentPage} />;
+        return <CalendarView groups={groups} meetups={meetups} setCurrentPage={setCurrentPage} navigateToGroupDetail={navigateToGroupDetail} />;
       case "createGroup":
         return <CreateGroupPage setGroups={setGroups} setCurrentPage={setCurrentPage} userId={user?.id} />;
       case "allGroups":
@@ -93,6 +118,7 @@ export default function App() {
             favoriteGroupIds={favoriteGroupIds}
             setCurrentPage={setCurrentPage}
             navigateToGroupDetail={navigateToGroupDetail}
+            userId={user?.id}
           />
         );
       case "joinGroup":

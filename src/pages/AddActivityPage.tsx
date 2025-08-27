@@ -1,121 +1,146 @@
 import { useState } from "react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Info } from "lucide-react";
 import { supabase } from "../supabaseClient";
 
 export default function AddActivityPage({
   selectedGroupId,
-  meetups,
   setMeetups,
   setCurrentPage,
   userId,
 }: any) {
-  const [subject, setSubject] = useState("");
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [description, setDescription] = useState("");
-  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleAddActivity = async (e: any) => {
+  const handleAddActivity = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const [hour, minute] = time.split(":").map(Number);
-    const now = new Date();
-    const activityDate = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      hour,
-      minute
-    );
+    setError("");
+    setIsLoading(true);
+
+    if (!date || !time) {
+        setError("Please select a valid date and time.");
+        setIsLoading(false);
+        return;
+    }
+
+    const activityDateTime = new Date(`${date}T${time}`);
 
     try {
-      const { data, error } = await supabase.from("meetups").insert({
-        name: subject,
-        date: activityDate.toISOString(),
-        group_id: selectedGroupId,
-        user_id: userId,
-      });
+      const { data, error: insertError } = await supabase
+        .from("meetups")
+        .insert({
+          title: title,
+          date_time: activityDateTime.toISOString(),
+          description: description,
+          group_id: selectedGroupId,
+          user_id: userId,
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
-      // To be removed once App.tsx is refactored
-      const newMeetup = {
-        id: data ? (data as any)[0].id : `meetup_${meetups.length + 1}`,
-        name: subject,
-        date: activityDate,
-        groupId: selectedGroupId,
-        user_id: userId,
-      };
-      setMeetups((prevMeetups: any) => [...prevMeetups, newMeetup]);
+      // This part for local state update can be removed if you fetch meetups from DB in App.tsx
+      setMeetups((prevMeetups: any) => [...prevMeetups, data]);
 
-      setMessage("Activity added successfully!");
+      // Navigate back to group detail page after a short delay
       setTimeout(() => {
-        setMessage("");
         setCurrentPage("groupDetail");
-      }, 1500);
+      }, 1000);
+
     } catch (error: any) {
-      alert(error.message);
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8 text-gray-800 font-sans">
-      {/* Header */}
-      <div className="flex items-center mb-8 text-[#113F67] space-x-4">
-        <button
-          onClick={() => setCurrentPage("groupDetail")}
-          className="p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
-        >
-          <ChevronLeft size={24} />
-        </button>
-        <h1 className="text-3xl font-bold">Add activities</h1>
-      </div>
+    <div className="min-h-screen bg-gray-50 font-sans">
+        <header className="bg-white shadow-sm p-4 flex items-center">
+            <button
+                onClick={() => setCurrentPage("groupDetail")}
+                className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition-colors"
+            >
+                <ChevronLeft size={22} />
+            </button>
+            <h1 className="text-2xl font-bold text-gray-800 ml-4">Add New Activity</h1>
+        </header>
 
-      {/* Message Box */}
-      {message && (
-        <div className="bg-[#34699A] text-white text-center py-3 rounded-xl mb-4 transition-opacity duration-300">
-          {message}
-        </div>
-      )}
+        <main className="p-8">
+            <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-md">
+                <form onSubmit={handleAddActivity} className="space-y-6">
+                    <div>
+                        <label htmlFor="activityName" className="block text-sm font-medium text-gray-700 mb-1">Activity Title</label>
+                        <input
+                            id="activityName"
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            className="w-full bg-gray-100 text-gray-800 py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                            placeholder="e.g., Project Sync-up"
+                            required
+                        />
+                    </div>
 
-      <form
-        onSubmit={handleAddActivity}
-        className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6"
-      >
-        {/* Subject Input */}
-        <input
-          type="text"
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          className="md:col-span-2 shadow appearance-none border-none rounded-xl w-full py-4 px-6 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-[#34699A] bg-[#34699A] placeholder-white"
-          placeholder="Subject..."
-          required
-        />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                            <input
+                                id="date"
+                                type="date"
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                                className="w-full bg-gray-100 text-gray-800 py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="time" className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                            <input
+                                id="time"
+                                type="time"
+                                value={time}
+                                onChange={(e) => setTime(e.target.value)}
+                                className="w-full bg-gray-100 text-gray-800 py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                required
+                            />
+                        </div>
+                    </div>
 
-        {/* Set time input */}
-        <input
-          type="time"
-          value={time}
-          onChange={(e) => setTime(e.target.value)}
-          className="shadow appearance-none border-none rounded-xl w-full py-4 px-6 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-[#34699A] bg-[#34699A] placeholder-white"
-          placeholder="Set time"
-          required
-        />
+                    <div>
+                        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description <span className="text-gray-400">(Optional)</span></label>
+                        <textarea
+                            id="description"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            className="w-full bg-gray-100 text-gray-800 py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all h-32 resize-none"
+                            placeholder="Any details about the activity..."
+                        ></textarea>
+                    </div>
 
-        {/* Description Textarea */}
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="shadow appearance-none border-none rounded-xl w-full py-4 px-6 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-[#34699A] h-32 resize-none bg-[#34699A] placeholder-white"
-          placeholder="Description..."
-        ></textarea>
+                    {error && (
+                        <div className="bg-red-100 text-red-700 p-3 rounded-lg flex items-center space-x-2">
+                            <Info size={18} />
+                            <span>{error}</span>
+                        </div>
+                    )}
 
-        {/* Confirm Button */}
-        <button
-          type="submit"
-          className="mt-4 md:col-span-1 bg-[#113F67] hover:bg-[#34699A] text-white font-bold py-3 px-6 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#113F67] transition-colors"
-        >
-          Confirm
-        </button>
-      </form>
+                    <div className="flex justify-end pt-4">
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                            {isLoading ? "Adding..." : "Add Activity"}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
     </div>
   );
 }
