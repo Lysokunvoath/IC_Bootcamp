@@ -9,6 +9,7 @@ export default function CreateGroupPage({
 }: any) {
   const [groupName, setGroupName] = useState("");
   const [description, setDescription] = useState("");
+  const [tags, setTags] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -24,6 +25,7 @@ export default function CreateGroupPage({
         .insert({
           name: groupName,
           description: description,
+          tags: tags.split(',').map(tag => tag.trim()),
           is_public: isPublic,
           user_id: userId,
         })
@@ -38,8 +40,7 @@ export default function CreateGroupPage({
           .insert({ group_id: groupData.id, user_id: userId });
 
         if (memberError) throw memberError;
-        
-        // This part for local state update can be removed if you fetch groups from DB in App.tsx
+
         const newGroup = {
             id: groupData.id,
             name: groupName,
@@ -98,6 +99,18 @@ export default function CreateGroupPage({
                             placeholder="What is this group about?"
                             required
                         ></textarea>
+                    </div>
+
+                    <div>
+                        <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+                        <input
+                            id="tags"
+                            type="text"
+                            value={tags}
+                            onChange={(e) => setTags(e.target.value)}
+                            className="w-full bg-gray-100 text-gray-800 py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                            placeholder="e.g., hiking, outdoors, social"
+                        />
                     </div>
 
                     <div>

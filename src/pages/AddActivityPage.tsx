@@ -43,10 +43,8 @@ export default function AddActivityPage({
 
       if (insertError) throw insertError;
 
-      // This part for local state update can be removed if you fetch meetups from DB in App.tsx
       setMeetups((prevMeetups: any) => [...prevMeetups, data]);
 
-      // Navigate back to group detail page after a short delay
       setTimeout(() => {
         setCurrentPage("groupDetail");
       }, 1000);

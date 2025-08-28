@@ -53,9 +53,8 @@ export default function CalendarView({
 
             <div className="flex-grow p-8 flex flex-col">
                 <div className="grid grid-cols-[auto,1fr] flex-grow">
-                    {/* Time Gutter */}
                     <div>
-                        <div className="h-16"></div> {/* Spacer for day headers */}
+                        <div className="h-16"></div>
                         {hours.map(hour => (
                             <div key={hour} className="h-16 flex justify-end pr-4">
                                 <span className="text-sm text-gray-500 -translate-y-1/2">
@@ -65,9 +64,7 @@ export default function CalendarView({
                         ))}
                     </div>
 
-                    {/* Calendar Grid */}
                     <div className="grid grid-cols-7 border-l border-gray-200 flex-grow">
-                        {/* Day Headers */}
                         {days.map(day => (
                             <div key={day.toString()} className="text-center py-4 border-b border-r border-gray-200">
                                 <p className="text-sm text-gray-500">{format(day, 'EEE')}</p>
@@ -77,7 +74,6 @@ export default function CalendarView({
                             </div>
                         ))}
 
-                        {/* Grid Cells */}
                         <div className="col-span-7 grid grid-cols-7 grid-rows-24">
                         {
                             days.map(day => (
@@ -89,14 +85,14 @@ export default function CalendarView({
                                                 .map((meetup: any) => {
                                                     const meetupDateTime = new Date(meetup.date_time);
                                                     const minutes = meetupDateTime.getMinutes();
-                                                    const topOffset = (minutes / 60) * 4; // 4rem per hour
-                                                    const group = groups.find((g: any) => g.id === meetup.group_id); // Corrected group_id
+                                                    const topOffset = (minutes / 60) * 4;
+                                                    const group = groups.find((g: any) => g.id === meetup.group_id);
                                                     return (
                                                         <div
                                                             key={meetup.id}
-                                                            onClick={() => navigateToGroupDetail(meetup.group_id)} // Corrected group_id
+                                                            onClick={() => navigateToGroupDetail(meetup.group_id)}
                                                             className="absolute w-full p-2 rounded-lg text-white bg-blue-500 hover:bg-blue-600 shadow-md z-10 text-xs font-medium cursor-pointer transition-all"
-                                                            style={{ top: `${topOffset}rem`, height: '2rem' }} // Fixed height for simplicity, can be dynamic
+                                                            style={{ top: `${topOffset}rem`, height: '2rem' }}
                                                         >
                                                             <p className="font-bold truncate">{meetup.title}</p>
                                                             {group && <p className="truncate">{group.name}</p>}

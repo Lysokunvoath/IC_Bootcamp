@@ -52,7 +52,6 @@ export default function HomePage({
 
     return (
         <div className="min-h-screen bg-gray-50 font-sans">
-            {/* Header */}
             <header className="bg-white shadow-sm p-4 flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-blue-600">GREX</h1>
                 <div className="flex items-center space-x-4">
@@ -69,7 +68,6 @@ export default function HomePage({
             </header>
 
             <main className="p-8">
-                {/* Welcome Banner */}
                 <div className="bg-blue-600 text-white p-8 rounded-xl shadow-lg mb-8 flex justify-between items-center">
                     <div>
                         <h2 className="text-3xl font-bold">Welcome, User!</h2>
@@ -78,7 +76,6 @@ export default function HomePage({
                     <Users size={60} className="text-blue-300 opacity-50"/>
                 </div>
 
-                {/* Groups Section */}
                 <div className="mb-8">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-2xl font-bold text-gray-800">Your Groups</h3>
@@ -126,7 +123,6 @@ export default function HomePage({
                      <button onClick={() => setCurrentPage('allGroups')} className="w-full mt-6 bg-white border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-100 transition-colors font-semibold">View All Groups</button>
                 </div>
 
-                {/* Today's Activities Section */}
                 <div>
                     <h3 className="text-2xl font-bold text-gray-800 mb-4">Today's Activities</h3>
                     <div className="bg-white rounded-xl shadow-md">

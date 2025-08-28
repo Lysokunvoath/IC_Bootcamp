@@ -127,6 +127,15 @@ export default function GroupDetailPage({
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800">{group.name}</h1>
                     <p className="text-sm text-gray-500">{group.description}</p>
+                    {group.tags && group.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            {group.tags.map((tag: string) => (
+                                <span key={tag} className="bg-gray-200 text-gray-700 px-2 py-1 rounded-full text-xs font-medium">
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -209,12 +218,12 @@ export default function GroupDetailPage({
                             <div className="space-y-4">
                                 <button onClick={() => setAddMemberModalOpen(true)} className="w-full text-left flex items-center space-x-3 p-3 bg-white rounded-lg hover:bg-gray-50 transition-colors">
                                     <PlusCircle size={20} className="text-blue-600"/>
-                                    <span>Add Member</span>
+                                    <span className="text-black">Add Member</span>
                                 </button>
                                 <div className="flex items-center justify-between p-3 bg-white rounded-lg">
                                     <div className="flex items-center space-x-3">
                                         <Settings size={20} className="text-blue-600"/>
-                                        <span>{group.isPublic ? 'Set to Private' : 'Set to Public'}</span>
+                                        <span className="text-black">{group.isPublic ? 'Set to Private' : 'Set to Public'}</span>
                                     </div>
                                     <label className="relative inline-flex items-center cursor-pointer">
                                         <input type="checkbox" className="sr-only peer" checked={!group.isPublic} onChange={handleTogglePrivate} />
@@ -252,7 +261,7 @@ export default function GroupDetailPage({
                         <button onClick={() => setAddMemberModalOpen(false)} className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors">
                             Cancel
                         </button>
-                        <button onClick={handleConfirmAddMember} className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        <button onClick={handleConfirmAddMember} className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 ">
                             Add Member
                         </button>
                     </div>

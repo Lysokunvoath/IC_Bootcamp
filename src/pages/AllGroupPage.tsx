@@ -6,7 +6,7 @@ export default function AllGroupsPage({
   setCurrentPage,
   navigateToGroupDetail,
   favoriteGroupIds = [],
-  userId, // Add userId to props
+  userId,
 }: any) {
   const [searchTerm, setSearchTerm] = useState("");
 
